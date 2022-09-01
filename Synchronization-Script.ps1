@@ -1,19 +1,27 @@
-﻿#Folder Paths
+﻿$date = Get-Date -Format yyyy-MM-dd
+
+#Paths
 $aSource = "C:\Users\Just\Documents\_Veeam_Assessment\aSource"
 $bTarget = "C:\Users\Just\Documents\_Veeam_Assessment\bTarget"
-
-#Logs Path
 $cLogs = "C:\Users\Just\Documents\_Veeam_Assessment\cLogs"
 
-#Current Date
-$dDate = Get-Date -Format yyyy-MM-dd
+#Folder Contents
+$aSourceFiles = Get-ChildItem -Path $aSource -Recurse -Name
+$bTargetFiles = Get-ChildItem -Path $bTarget -Recurse -Name
 
-#Check Target Folder
-if(Test-Path $bTarget\$dDate){}
-    else{New-Item -Path $bTarget\$dDate -ItemType directory}
+#Differences
+$diffs_left = Compare-Object $aSourceFiles $bTargetFiles -PassThru | Where-Object {$_.SideIndicator -eq "<="}
+$diffs_right = Compare-Object $aSourceFiles $bTargetFiles -PassThru | Where-Object {$_.SideIndicator -eq "=>"}
 
-#Copy Items from source to target
-foreach($file in $aSource){
-    Copy-Item $file\* -Destination $bTarget\$dDate -Recurse -Force
+echo $diffs_left
+echo $diffs_right
+
+#Copy Files From Source
+foreach($file in $diffs_left){
+    Copy-Item $aSource\$file -Destination $bTarget -Recurse -Force
 }
 
+#Delete Files From Target
+foreach($file in $diffs_right){
+    Remove-Item $bTarget\$file -Recurse
+}
