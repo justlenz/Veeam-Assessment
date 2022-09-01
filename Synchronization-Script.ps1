@@ -10,8 +10,8 @@ $aSourceFiles = Get-ChildItem -Path $aSource -Recurse -Name
 $bTargetFiles = Get-ChildItem -Path $bTarget -Recurse -Name
 
 #Differences
-$diffs_left = Compare-Object $aSourceFiles $bTargetFiles -PassThru | Where-Object {$_.SideIndicator -eq "<="}
-$diffs_right = Compare-Object $aSourceFiles $bTargetFiles -PassThru | Where-Object {$_.SideIndicator -eq "=>"}
+$diffs_left = Compare-Object @($aSourceFiles | Select-Object) @($bTargetFiles | Select-Object) -PassThru | Where-Object {$_.SideIndicator -eq "<="}
+$diffs_right = Compare-Object @($aSourceFiles | Select-Object) @($bTargetFiles | Select-Object) -PassThru | Where-Object {$_.SideIndicator -eq "=>"}
 
 echo $diffs_left
 echo $diffs_right
