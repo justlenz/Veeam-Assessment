@@ -1,9 +1,15 @@
-﻿$date = Get-Date -Format yyyy-MM-dd
+﻿$date1 = Get-Date -Format yyyy-MM-dd
+$date2 = (Get-Date).toString("yyyy-MM-dd HH:mm:ss")
 
 #Paths
 $aSource = "C:\Users\Just\Documents\_Veeam_Assessment\aSource"
 $bTarget = "C:\Users\Just\Documents\_Veeam_Assessment\bTarget"
-$cLogs = "C:\Users\Just\Documents\_Veeam_Assessment\cLogs"
+$cLogs = "C:\Users\Just\Documents\_Veeam_Assessment\cLogs\"
+
+#Logfile
+$logFile = $cLogs + "LOG-Sync_" + $date1 + ".txt"
+"Synchronization from " + $date2 | Add-Content $logFile
+"----------------------------------------" | Add-Content $logFile
 
 #Folder Contents
 $aSourceFiles = Get-ChildItem -Path $aSource -Recurse -Name
@@ -13,15 +19,16 @@ $bTargetFiles = Get-ChildItem -Path $bTarget -Recurse -Name
 $diffs_left = Compare-Object @($aSourceFiles | Select-Object) @($bTargetFiles | Select-Object) -PassThru | Where-Object {$_.SideIndicator -eq "<="}
 $diffs_right = Compare-Object @($aSourceFiles | Select-Object) @($bTargetFiles | Select-Object) -PassThru | Where-Object {$_.SideIndicator -eq "=>"}
 
-echo $diffs_left
-echo $diffs_right
-
 #Copy Files From Source
 foreach($file in $diffs_left){
     Copy-Item $aSource\$file -Destination $bTarget -Recurse -Force
+    $date2 + " COPY " + $aSource + "\" + $file + " TO " + $bTarget | Add-Content $logFile
+    "-------------------" | Add-Content $logFile
 }
 
 #Delete Files From Target
 foreach($file in $diffs_right){
     Remove-Item $bTarget\$file -Recurse
+    $date2 + " DELETE " + $bTarget + "\" + $file | Add-Content $logFile
+    "-------------------" | Add-Content $logFile
 }
