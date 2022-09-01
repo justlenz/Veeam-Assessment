@@ -1,53 +1,75 @@
-﻿#Dates
-$date1 = Get-Date -Format yyyy-MM-dd
-$date2 = (Get-Date).toString("yyyy-MM-dd HH:mm:ss")
+﻿#Call The Function From The PowerShell Console Like: Sync-Folder C:\Temp\Source C:\Temp\Target C:\Temp\Logs
 
-#Paths
-$aSource = "C:\Users\Just\Documents\_Veeam_Assessment\aSource"
-$bTarget = "C:\Users\Just\Documents\_Veeam_Assessment\bTarget"
-$cLogs = "C:\Users\Just\Documents\_Veeam_Assessment\cLogs\"
+function Sync-Folder{
 
-#Logfile
-$logFile = $cLogs + "LOG-Sync_" + $date1 + ".txt"
-"Synchronization from " + $date2 | Add-Content $logFile
-"----------------------------------------" | Add-Content $logFile
+    #Path Parameters
+    param(
+        [parameter(Mandatory)]
+        [String]$aSource,
+        [String]$bTarget,
+        [String]$cLogs
+    )
 
-#Folder Contents
-$aSourceFiles = Get-ChildItem -Path $aSource -Recurse -Name
-$bTargetFiles = Get-ChildItem -Path $bTarget -Recurse -Name
+    #---Variables----------------------------------------------------------------------------------------------------------------------------------------
 
-#Differences
-$diffs_left = Compare-Object @($aSourceFiles | Select-Object) @($bTargetFiles | Select-Object) -PassThru | Where-Object {$_.SideIndicator -eq "<="}
-$diffs_right = Compare-Object @($aSourceFiles | Select-Object) @($bTargetFiles | Select-Object) -PassThru | Where-Object {$_.SideIndicator -eq "=>"}
+    #Dates
+    $date1 = Get-Date -Format yyyy-MM-dd
+    $date2 = (Get-Date).toString("yyyy-MM-dd HH:mm:ss")
 
-#---------------------------------------------------------------------------------------------------------------------------------------------------
+    #Paths
+    #$aSource = "C:\Users\Just\Documents\_Veeam_Assessment\aSource"
+    #$bTarget = "C:\Users\Just\Documents\_Veeam_Assessment\bTarget"
+    #$cLogs = "C:\Users\Just\Documents\_Veeam_Assessment\cLogs\"
 
-#Copy Files From Source
-foreach($file in $diffs_left){
-    Copy-Item $aSource\$file -Destination $bTarget -Recurse -Force
+    #Create Logfile
+    $logFile = $cLogs + "LOG-Sync_" + $date1 + ".txt"
+    "Synchronization from " + $date2 | Add-Content $logFile
+    "----------------------------------------" | Add-Content $logFile
 
-    #Output String
-    $outString = $date2 + " COPY " + $aSource + "\" + $file + " TO " + $bTarget
+    #Get Folder Contents
+    $aSourceFiles = Get-ChildItem -Path $aSource -Recurse -Name
+    $bTargetFiles = Get-ChildItem -Path $bTarget -Recurse -Name
 
-    #Console Output
-    Write-Host $outString -ForegroundColor Yellow 
+    #Compare Differences
+    $diffs_left = Compare-Object @($aSourceFiles | Select-Object) @($bTargetFiles | Select-Object) -PassThru | Where-Object {$_.SideIndicator -eq "<="}
+    $diffs_right = Compare-Object @($aSourceFiles | Select-Object) @($bTargetFiles | Select-Object) -PassThru | Where-Object {$_.SideIndicator -eq "=>"}
 
-    #Write To Log
-    $outString | Add-Content $logFile
-    "-------------------" | Add-Content $logFile
-}
+    #---Functions----------------------------------------------------------------------------------------------------------------------------------------
 
-#Delete Files From Target
-foreach($file in $diffs_right){
-    Remove-Item $bTarget\$file -Recurse
+    #Test Input Paths
+    if(Test-Path $aSource, $bTarget, $cLogs){
+    Write-Output "Paths are valid"
 
-    #Output String
-    $outString = $date2 + " DELETE " + $bTarget + "\" + $file
+    #Copy Files From Source
+    foreach($file in $diffs_left){
+        Copy-Item $aSource\$file -Destination $bTarget -Recurse -Force
 
-    #Console Output
-    Write-Host $outString -ForegroundColor Red
+        #Output String
+        $outString = $date2 + " COPY " + $aSource + "\" + $file + " TO " + $bTarget
 
-    #Write To Log
-    $outString | Add-Content $logFile
-    "-------------------" | Add-Content $logFile
+        #Console Output
+        Write-Host $outString -ForegroundColor Yellow 
+
+        #Write To Log
+        $outString | Add-Content $logFile
+        "-------------------" | Add-Content $logFile
+        }
+
+    #Delete Files From Target
+    foreach($file in $diffs_right){
+        Remove-Item $bTarget\$file -Recurse
+    
+        #Output String
+        $outString = $date2 + " DELETE " + $bTarget + "\" + $file
+
+        #Console Output
+        Write-Host $outString -ForegroundColor Red
+
+        #Write To Log
+        $outString | Add-Content $logFile
+        "-------------------" | Add-Content $logFile
+        }
+
+    }
+    else{Write-Output "At least 1 path is not valid!"}
 }
